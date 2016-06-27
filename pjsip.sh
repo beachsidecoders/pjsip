@@ -11,7 +11,7 @@ function download() {
 }
 
 BASE_DIR="$1"
-PJSIP_URL="http://www.pjsip.org/release/2.3/pjproject-2.3.tar.bz2"
+PJSIP_URL="http://www.pjsip.org/release/2.5.1/pjproject-2.5.1.tar.bz2"
 PJSIP_DIR="$1/src"
 LIB_PATHS=("pjlib/lib" \
            "pjlib-util/lib" \
@@ -199,6 +199,7 @@ function lipo() {
     done < "${TMP}"
 }
 
+echo "${PJSIP_URL}" "${PJSIP_DIR}"
 download "${PJSIP_URL}" "${PJSIP_DIR}"
 config_site "${PJSIP_DIR}"
 armv7 && armv7s && arm64 && i386 && x86_64
