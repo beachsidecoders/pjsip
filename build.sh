@@ -51,9 +51,10 @@ function openh264() {
 
 PJSIP_DIR="${BUILD_DIR}/pjproject"
 function pjsip() {
-    "${__DIR__}/pjsip.sh" "${PJSIP_DIR}" --with-openssl "${OPENSSL_DIR}" --with-openh264 "${OPENH264_DIR}"
+#    "${__DIR__}/pjsip.sh" "${PJSIP_DIR}" --with-openssl "${OPENSSL_DIR}" --with-openh264 "${OPENH264_DIR}"
+    "${__DIR__}/pjsip.sh" "${PJSIP_DIR}" --with-openssl "${OPENSSL_DIR}"
 }
 
 openssl
-openh264
+# openh264
 pjsip
