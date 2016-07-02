@@ -84,7 +84,9 @@ function copy_libs () {
         if [ -d "${DST_DIR}" ]; then
             rm -rf "${DST_DIR}"
         fi
+        echo "${SRC_DIR}" "${DST_DIR}"
         cp -R "${SRC_DIR}" "${DST_DIR}"
+
     done
 }
 
@@ -179,6 +181,7 @@ function lipo() {
                     SED_SRC="${SED_SRC//\//\\/}"
                     SED_DST="${FILE} ${OPTIONS}"
                     SED_DST="${SED_DST//\//\\/}"
+                    echo "${SED_SRC}/${SED_DST}"
                     sed -i.bak "s/${SED_SRC}/${SED_DST}/" "${TMP}"
                     rm "${TMP}.bak"
 
@@ -190,6 +193,7 @@ function lipo() {
         shift
     done
 
+    cat ${TMP}
     while read LINE; do
         COMPONENTS=($LINE)
         LAST=${COMPONENTS[@]:(-1)}
@@ -199,8 +203,204 @@ function lipo() {
     done < "${TMP}"
 }
 
-echo "${PJSIP_URL}" "${PJSIP_DIR}"
+function build_all() {
+    armv7 && armv7s && arm64 && i386 && x86_64
+}
+
+function lipo_libs() {
+
+    echo "Lipo libs..."
+
+    if [ -d ${BASE_DIR}/lib/ ]; then
+        rm -rf ${BASE_DIR}/lib/
+    fi
+    if [ ! -d ${BASE_DIR}/lib/ ]; then
+        mkdir ${BASE_DIR}/lib/
+    fi
+
+    # pjlib
+    PJLIB_OUTPUT_DIR="${BASE_DIR}/lib/pjlib/lib"
+
+    if [ ! -d ${PJLIB_OUTPUT_DIR} ]; then
+        mkdir -p ${PJLIB_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjlib/lib-armv7/libpj-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjlib/lib-armv7s/libpj-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjlib/lib-arm64/libpj-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjlib/lib-i386/libpj-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjlib/lib-x86_64/libpj-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJLIB_OUTPUT_DIR}/libpj-apple-darwin_ios.a
+
+    # pjlib-util
+    PJLIB_UTIL_OUTPUT_DIR="${BASE_DIR}/lib/pjlib-util/lib"
+
+    if [ ! -d ${PJLIB_UTIL_OUTPUT_DIR} ]; then
+        mkdir -p ${PJLIB_UTIL_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjlib-util/lib-armv7/libpjlib-util-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjlib-util/lib-armv7s/libpjlib-util-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjlib-util/lib-arm64/libpjlib-util-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjlib-util/lib-i386/libpjlib-util-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjlib-util/lib-x86_64/libpjlib-util-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJLIB_UTIL_OUTPUT_DIR}/libpjlib-util-apple-darwin_ios.a
+
+    # pjnath
+    PJNATH_OUTPUT_DIR="${BASE_DIR}/lib/pjnath/lib"
+
+    if [ ! -d ${PJNATH_OUTPUT_DIR} ]; then
+        mkdir -p ${PJNATH_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjnath/lib-armv7/libpjnath-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjnath/lib-armv7s/libpjnath-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjnath/lib-arm64/libpjnath-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjnath/lib-i386/libpjnath-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjnath/lib-x86_64/libpjnath-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJNATH_OUTPUT_DIR}/libpjnath-apple-darwin_ios.a
+
+    # pjsip
+    PJSIP_OUTPUT_DIR="${BASE_DIR}/lib/pjsip/lib"
+
+    if [ ! -d ${PJSIP_OUTPUT_DIR} ]; then
+        mkdir -p ${PJSIP_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjsip/lib-armv7/libpjsip-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjsip/lib-armv7s/libpjsip-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjsip/lib-arm64/libpjsip-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjsip/lib-i386/libpjsip-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjsip/lib-x86_64/libpjsip-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJSIP_OUTPUT_DIR}/libpjsip-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjsip/lib-armv7/libpjsip-simple-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjsip/lib-armv7s/libpjsip-simple-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjsip/lib-arm64/libpjsip-simple-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjsip/lib-i386/libpjsip-simple-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjsip/lib-x86_64/libpjsip-simple-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJSIP_OUTPUT_DIR}/libpjsip-simple-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjsip/lib-armv7/libpjsip-ua-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjsip/lib-armv7s/libpjsip-ua-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjsip/lib-arm64/libpjsip-ua-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjsip/lib-i386/libpjsip-ua-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjsip/lib-x86_64/libpjsip-ua-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJSIP_OUTPUT_DIR}/libpjsip-ua-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjsip/lib-armv7/libpjsua-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjsip/lib-armv7s/libpjsua-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjsip/lib-arm64/libpjsua-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjsip/lib-i386/libpjsua-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjsip/lib-x86_64/libpjsua-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJSIP_OUTPUT_DIR}/libpjsua-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjsip/lib-armv7/libpjsua2-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjsip/lib-armv7s/libpjsua2-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjsip/lib-arm64/libpjsua2-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjsip/lib-i386/libpjsua2-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjsip/lib-x86_64/libpjsua2-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJSIP_OUTPUT_DIR}/libpjsua2-apple-darwin_ios.a
+
+
+    # pjmedia
+    PJMEDIA_OUTPUT_DIR="${BASE_DIR}/lib/pjmedia/lib"
+
+    if [ ! -d ${PJMEDIA_OUTPUT_DIR} ]; then
+        mkdir -p ${PJMEDIA_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjmedia/lib-armv7/libpjmedia-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjmedia/lib-armv7s/libpjmedia-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjmedia/lib-arm64/libpjmedia-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjmedia/lib-i386/libpjmedia-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjmedia/lib-x86_64/libpjmedia-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJMEDIA_OUTPUT_DIR}/libpjmedia-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjmedia/lib-armv7/libpjmedia-audiodev-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjmedia/lib-armv7s/libpjmedia-audiodev-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjmedia/lib-arm64/libpjmedia-audiodev-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjmedia/lib-i386/libpjmedia-audiodev-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjmedia/lib-x86_64/libpjmedia-audiodev-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJMEDIA_OUTPUT_DIR}/libpjmedia-audiodev-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjmedia/lib-armv7/libpjmedia-codec-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjmedia/lib-armv7s/libpjmedia-codec-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjmedia/lib-arm64/libpjmedia-codec-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjmedia/lib-i386/libpjmedia-codec-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjmedia/lib-x86_64/libpjmedia-codec-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJMEDIA_OUTPUT_DIR}/libpjmedia-codec-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjmedia/lib-armv7/libpjmedia-videodev-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjmedia/lib-armv7s/libpjmedia-videodev-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjmedia/lib-arm64/libpjmedia-videodev-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjmedia/lib-i386/libpjmedia-videodev-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjmedia/lib-x86_64/libpjmedia-videodev-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJMEDIA_OUTPUT_DIR}/libpjmedia-videodev-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/pjmedia/lib-armv7/libpjsdp-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/pjmedia/lib-armv7s/libpjsdp-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/pjmedia/lib-arm64/libpjsdp-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/pjmedia/lib-i386/libpjsdp-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/pjmedia/lib-x86_64/libpjsdp-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJMEDIA_OUTPUT_DIR}/libpjsdp-apple-darwin_ios.a
+
+    # pj_third_party
+    PJ_THIRD_PARTY_OUTPUT_DIR="${BASE_DIR}/lib/third_party/lib"
+
+    if [ ! -d ${PJ_THIRD_PARTY_OUTPUT_DIR} ]; then
+        mkdir -p ${PJ_THIRD_PARTY_OUTPUT_DIR}
+    fi
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libg7221codec-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libg7221codec-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libg7221codec-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libg7221codec-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libg7221codec-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libg7221codec-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libgsmcodec-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libgsmcodec-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libgsmcodec-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libgsmcodec-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libgsmcodec-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libgsmcodec-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libilbccodec-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libilbccodec-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libilbccodec-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libilbccodec-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libilbccodec-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libilbccodec-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libresample-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libresample-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libresample-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libresample-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libresample-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libresample-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libspeex-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libspeex-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libspeex-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libspeex-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libspeex-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libspeex-apple-darwin_ios.a
+
+    xcrun -sdk iphoneos lipo -arch armv7  ${PJSIP_DIR}/third_party/lib-armv7/libsrtp-armv7-apple-darwin_ios.a \
+                             -arch armv7s ${PJSIP_DIR}/third_party/lib-armv7s/libsrtp-armv7s-apple-darwin_ios.a \
+                             -arch arm64  ${PJSIP_DIR}/third_party/lib-arm64/libsrtp-arm64-apple-darwin_ios.a \
+                             -arch i386   ${PJSIP_DIR}/third_party/lib-i386/libsrtp-i386-apple-darwin_ios.a \
+                             -arch x86_64 ${PJSIP_DIR}/third_party/lib-x86_64/libsrtp-x86_64-apple-darwin_ios.a \
+                             -create -output ${PJ_THIRD_PARTY_OUTPUT_DIR}/libsrtp-apple-darwin_ios.a
+
+}
+
 download "${PJSIP_URL}" "${PJSIP_DIR}"
 config_site "${PJSIP_DIR}"
-armv7 && armv7s && arm64 && i386 && x86_64
-lipo armv7 armv7s arm64 i386 x86_64
+build_all
+lipo_libs
+#armv7 && armv7s && arm64 && i386 && x86_64
+#armv7 && armv7s
+#lipo armv7 armv7s
+#lipo armv7 armv7s arm64 i386 x86_64
