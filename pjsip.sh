@@ -13,6 +13,8 @@ function download() {
 BASE_DIR="$1"
 PJSIP_URL="http://www.pjsip.org/release/2.5.1/pjproject-2.5.1.tar.bz2"
 PJSIP_DIR="$1/src"
+PJSIP_CONFIG_PATH="${PJSIP_DIR}/pjlib/include/pj/config_site.h"
+
 LIB_PATHS=("pjlib/lib" \
            "pjlib-util/lib" \
            "pjmedia/lib" \
@@ -49,16 +51,23 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
+function remove_config_site () {
+    if [ -f "${PJSIP_CONFIG_PATH}" ]; then
+        rm "${PJSIP_CONFIG_PATH}"
+    fi
+}
+
 function config_site() {
-    SOURCE_DIR=$1
-    PJSIP_CONFIG_PATH="${SOURCE_DIR}/pjlib/include/pj/config_site.h"
+    #SOURCE_DIR=$1
+    #PJSIP_CONFIG_PATH="${SOURCE_DIR}/pjlib/include/pj/config_site.h"
     HAS_VIDEO=
 
     echo "Creating config.h..."
 
-    if [ -f "${PJSIP_CONFIG_PATH}" ]; then
-        rm "${PJSIP_CONFIG_PATH}"
-    fi
+    remove_config_site
+#    if [ -f "${PJSIP_CONFIG_PATH}" ]; then
+#        rm "${PJSIP_CONFIG_PATH}"
+#    fi
 
     echo "#define PJ_CONFIG_IPHONE 1" >> "${PJSIP_CONFIG_PATH}"
     if [[ ${OPENH264_PREFIX} ]]; then
@@ -84,10 +93,22 @@ function copy_libs () {
         if [ -d "${DST_DIR}" ]; then
             rm -rf "${DST_DIR}"
         fi
-        echo "${SRC_DIR}" "${DST_DIR}"
+        #echo "${SRC_DIR}" "${DST_DIR}"
         cp -R "${SRC_DIR}" "${DST_DIR}"
 
     done
+}
+
+function remove_libs () {
+    ARCH=${1}
+
+    for LIB_DIR in ${LIB_PATHS[*]}; do
+        LIB_DIR="${PJSIP_DIR}/${LIB_DIR}"
+        LIB_ARCH_DIR="${LIB_DIR}-${ARCH}"
+        if [ -d "${LIB_ARCH_DIR}" ]; then
+            rm -rf "${LIB_ARCH_DIR}"
+        fi
+    done    
 }
 
 function _build() {
@@ -205,6 +226,21 @@ function lipo() {
 
 function build_all() {
     armv7 && armv7s && arm64 && i386 && x86_64
+}
+
+function remove_all_libs {
+    remove_libs armv7
+    remove_libs armv7s
+    remove_libs arm64
+    remove_libs i386
+    remove_libs x86_64
+
+    for LIB_DIR in ${LIB_PATHS[*]}; do
+        LIB_DIR="${PJSIP_DIR}/${LIB_DIR}"
+        if [ -d "${LIB_DIR}" ]; then
+            rm -rf "${LIB_DIR}"
+        fi
+    done
 }
 
 function lipo_libs() {
@@ -396,10 +432,53 @@ function lipo_libs() {
 
 }
 
+function copy_pj_include () {
+    PJ_HEADER_DST_BASE_DIR=$1
+    PJ_LIB=$2
+
+    PJ_HEADER_SRC_DIR="${PJSIP_DIR}/${PJ_LIB}/include"
+    PJ_HEADER_DST_DIR="${PJ_HEADER_DST_BASE_DIR}/${PJ_LIB}"
+
+    if [ ! -d ${PJ_HEADER_DST_DIR} ]; then
+        mkdir -p ${PJ_HEADER_DST_DIR}
+    fi
+
+    # echo "${PJ_HEADER_SRC_DIR}" "${PJ_HEADER_DST_DIR}"
+    cp -R "${PJ_HEADER_SRC_DIR}" "${PJ_HEADER_DST_DIR}"
+
+}
+
+function copy_headers () {
+
+    echo "Copy headers..."
+
+    PJ_HEADER_BASE_DIR="${BASE_DIR}/include"
+
+    if [ -d ${PJ_HEADER_BASE_DIR} ]; then
+        rm -rf ${PJ_HEADER_BASE_DIR}
+    fi
+    if [ ! -d ${PJ_HEADER_BASE_DIR} ]; then
+        mkdir ${PJ_HEADER_BASE_DIR}
+    fi
+
+    copy_pj_include "${PJ_HEADER_BASE_DIR}" pjsip
+    copy_pj_include "${PJ_HEADER_BASE_DIR}" pjlib
+    copy_pj_include "${PJ_HEADER_BASE_DIR}" pjlib-util
+    copy_pj_include "${PJ_HEADER_BASE_DIR}" pjnath
+    copy_pj_include "${PJ_HEADER_BASE_DIR}" pjmedia
+}
+
+
 download "${PJSIP_URL}" "${PJSIP_DIR}"
-config_site "${PJSIP_DIR}"
+#config_site "${PJSIP_DIR}"
+config_site
 build_all
 lipo_libs
+copy_headers
+
+echo "cleaning up..."
+remove_all_libs
+remove_config_site
 #armv7 && armv7s && arm64 && i386 && x86_64
 #armv7 && armv7s
 #lipo armv7 armv7s
